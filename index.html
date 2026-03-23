@@ -1,13 +1,61 @@
-<h1>OG Gastos 💰</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OG Gastos</title>
 
-<input id="amount" placeholder="Monto">
+<style>
+body{font-family:Arial;background:#f3f4f6;padding:15px;margin:0;}
+h1{text-align:center;color:#7c3aed;}
+.card{background:white;padding:15px;border-radius:15px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+input,select{width:100%;padding:12px;margin-top:10px;border-radius:12px;border:1px solid #ccc;}
+button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:12px;background:linear-gradient(45deg,#9333ea,#7c3aed);color:white;font-weight:bold;font-size:16px;}
+.item{background:#eee;padding:10px;border-radius:10px;margin-top:5px;}
+.income{color:green;}
+.expense{color:red;}
+.balance{text-align:center;font-size:22px;font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<h1>💰 OG Gastos</h1>
+
+<div class="card">
+
+<select id="type">
+<option value="income">Ingreso</option>
+<option value="expense">Gasto</option>
+</select>
+
 <input id="desc" placeholder="Descripción">
+<input id="amount" placeholder="Monto">
 
-<button onclick="add()">Guardar</button>
+<select id="account">
+<option>Steve’s Bar</option>
+<option>Airbnb</option>
+<option>Propiedades</option>
+<option>Personal</option>
+<option>461 Magee</option>
+<option>602 Driving Park</option>
+<option>1440 Clifford</option>
+<option>112 Main St</option>
+<option>El Salvador</option>
+<option>Nuevo Proyecto SV</option>
+</select>
 
-<h3>Balance: $<span id="balance">0</span></h3>
+<button onclick="add()">+ Agregar</button>
 
+</div>
+
+<div class="card">
+<div class="balance">Balance: $<span id="balance">0</span></div>
+</div>
+
+<div class="card">
+<h3>Movimientos</h3>
 <div id="list"></div>
+</div>
 
 <script>
 
@@ -19,33 +67,43 @@ render();
 }
 
 function add(){
-let a = Number(document.getElementById("amount").value);
-let d = document.getElementById("desc").value;
+let t=document.getElementById("type").value;
+let d=document.getElementById("desc").value;
+let a=Number(document.getElementById("amount").value);
+let acc=document.getElementById("account").value;
 
-if(!a) return alert("Pon un monto");
+if(!a) return alert("Ingresa monto");
 
-data.push({a,d});
+data.push({t,d,a,acc});
 save();
 }
 
 function render(){
-let list = document.getElementById("list");
-list.innerHTML = "";
-
-let balance = 0;
+let list=document.getElementById("list");
+list.innerHTML="";
+let balance=0;
 
 data.forEach(x=>{
-let div = document.createElement("div");
+let div=document.createElement("div");
+div.className="item";
 
-div.innerHTML = "$" + x.a + " - " + x.d;
-balance += x.a;
+if(x.t==="income"){
+div.innerHTML=`<span class="income">+ $${x.a}</span> - ${x.d} (${x.acc})`;
+balance+=x.a;
+}else{
+div.innerHTML=`<span class="expense">- $${x.a}</span> - ${x.d} (${x.acc})`;
+balance-=x.a;
+}
 
 list.appendChild(div);
 });
 
-document.getElementById("balance").innerText = balance;
+document.getElementById("balance").innerText=balance;
 }
 
 render();
 
 </script>
+
+</body>
+</html>
