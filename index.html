@@ -1,12 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OG Gastos</title>
-</head>
-<body>
-  <h1>OG Gastos funcionando 🎉</h1>
-  <p>Ya estás listo para usar tu app</p>
-</body>
-</html>
+<h1>OG Gastos 💰</h1>
+
+<input id="amount" placeholder="Monto">
+<input id="desc" placeholder="Descripción">
+
+<button onclick="add()">Guardar</button>
+
+<h3>Balance: $<span id="balance">0</span></h3>
+
+<div id="list"></div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("og")) || [];
+
+function save(){
+localStorage.setItem("og", JSON.stringify(data));
+render();
+}
+
+function add(){
+let a = Number(document.getElementById("amount").value);
+let d = document.getElementById("desc").value;
+
+if(!a) return alert("Pon un monto");
+
+data.push({a,d});
+save();
+}
+
+function render(){
+let list = document.getElementById("list");
+list.innerHTML = "";
+
+let balance = 0;
+
+data.forEach(x=>{
+let div = document.createElement("div");
+
+div.innerHTML = "$" + x.a + " - " + x.d;
+balance += x.a;
+
+list.appendChild(div);
+});
+
+document.getElementById("balance").innerText = balance;
+}
+
+render();
+
+</script>
