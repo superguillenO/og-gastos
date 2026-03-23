@@ -1,326 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OG Gastos PRO</title>
+
+<style>
+body{font-family:Arial;background:#f3f4f6;padding:15px;margin:0;}
+h1{text-align:center;color:#7c3aed;}
+.card{background:white;padding:15px;border-radius:15px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+input,select,textarea{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #ccc;}
+button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;background:#7c3aed;color:white;font-weight:bold;}
+.item{background:#eee;padding:10px;border-radius:10px;margin-top:5px;}
+.income{color:green;}
+.expense{color:red;}
+.balance{text-align:center;font-size:22px;font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<h1>OG Gastos PRO 💼</h1>
+
+<div class="card">
+<select id="type">
+<option value="income">Ingreso</option>
+<option value="expense">Gasto</option>
+</select>
+
+<input id="desc" placeholder="Descripción">
+<input id="amount" type="number" placeholder="Monto">
+
+<select id="account">
+<option>Steve’s Bar</option>
+<option>Airbnb</option>
+<option>Propiedades</option>
+<option>Personal</option>
+<option>461 Magee</option>
+<option>602 Driving Park</option>
+<option>1440 Clifford</option>
+<option>112 Main St</option>
+<option>El Salvador</option>
+<option>Nuevo Proyecto SV</option>
+</select>
+
+<button onclick="add()">Agregar</button>
+</div>
+
+<div class="card balance">
+Balance: $<span id="balance">0</span>
+</div>
+
+<div class="card">
+<h3>Movimientos</h3>
+<div id="list"></div>
+</div>
+
 <script>
-const STORAGE_KEY="og-gastos-pro-v1";
-let movements=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-let editingId=null;
+let data = JSON.parse(localStorage.getItem("og")) || [];
 
-const accounts=[
-"Steve’s Bar and Grill",
-"Airbnb",
-"Propiedades",
-"Personal",
-"461 Magee Ave",
-"602 Driving Park",
-"1440 Clifford",
-"112 Main St",
-"El Salvador",
-"Nuevo Proyecto El Salvador"
-];
-
-function money(n){
-  return Number(n||0).toLocaleString("en-US",{style:"currency",currency:"USD"});
+function save(){
+localStorage.setItem("og", JSON.stringify(data));
+render();
 }
 
-function todayValue(){
-  const d=new Date();
-  const m=String(d.getMonth()+1).padStart(2,"0");
-  const day=String(d.getDate()).padStart(2,"0");
-  return `${d.getFullYear()}-${m}-${day}`;
-}
+function add(){
+let t=document.getElementById("type").value;
+let d=document.getElementById("desc").value;
+let a=Number(document.getElementById("amount").value);
+let acc=document.getElementById("account").value;
 
-function persist(){
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(movements));
-}
+if(!a) return alert("Ingresa monto");
 
-function showTab(id,btn){
-  document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-  document.querySelectorAll(".tabbtn").forEach(x=>x.classList.remove("active"));
-  btn.classList.add("active");
-}
-
-function fillAccounts(){
-  const a=document.getElementById("account");
-  const f=document.getElementById("filterAccount");
-  a.innerHTML="";
-  f.innerHTML='<option value="all">Todas</option>';
-
-  accounts.forEach(acc=>{
-    let o=document.createElement("option");
-    o.value=acc;
-    o.textContent=acc;
-    a.appendChild(o);
-
-    let o2=document.createElement("option");
-    o2.value=acc;
-    o2.textContent=acc;
-    f.appendChild(o2);
-  });
-}
-
-function resetForm(){
-  editingId=null;
-  document.getElementById("formTitle").textContent="Nuevo movimiento";
-  document.getElementById("type").value="income";
-  document.getElementById("date").value=todayValue();
-  document.getElementById("account").value=accounts[0];
-  document.getElementById("category").value="Ventas";
-  document.getElementById("payment").value="Efectivo";
-  document.getElementById("amount").value="";
-  document.getElementById("description").value="";
-  document.getElementById("notes").value="";
-}
-
-function saveMovement(){
-  const obj={
-    id:editingId||Date.now().toString(),
-    type:document.getElementById("type").value,
-    date:document.getElementById("date").value,
-    account:document.getElementById("account").value,
-    category:document.getElementById("category").value,
-    payment:document.getElementById("payment").value,
-    amount:Number(document.getElementById("amount").value),
-    description:document.getElementById("description").value.trim(),
-    notes:document.getElementById("notes").value.trim()
-  };
-
-  if(!obj.date) return alert("Selecciona una fecha.");
-  if(!obj.amount||obj.amount<=0) return alert("Ingresa un monto válido.");
-  if(!obj.description) return alert("Escribe una descripción.");
-
-  if(editingId){
-    movements=movements.map(x=>x.id===editingId?obj:x);
-  }else{
-    movements.unshift(obj);
-  }
-
-  persist();
-  resetForm();
-  render();
-}
-
-function editMovement(id){
-  const m=movements.find(x=>x.id===id);
-  if(!m) return;
-
-  editingId=id;
-  document.getElementById("formTitle").textContent="Editar movimiento";
-  document.getElementById("type").value=m.type;
-  document.getElementById("date").value=m.date;
-  document.getElementById("account").value=m.account;
-  document.getElementById("category").value=m.category;
-  document.getElementById("payment").value=m.payment;
-  document.getElementById("amount").value=m.amount;
-  document.getElementById("description").value=m.description;
-  document.getElementById("notes").value=m.notes||"";
-
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-
-function deleteMovement(id){
-  if(!confirm("¿Borrar este movimiento?")) return;
-  movements=movements.filter(x=>x.id!==id);
-  persist();
-  render();
-}
-
-function getFiltered(){
-  const q=document.getElementById("search").value.toLowerCase().trim();
-  const t=document.getElementById("filterType").value;
-  const a=document.getElementById("filterAccount").value;
-  const m=document.getElementById("filterMonth").value;
-
-  return movements.filter(x=>{
-    const searchOk=!q||[
-      x.description,
-      x.notes,
-      x.account,
-      x.category,
-      x.payment,
-      x.date
-    ].join(" ").toLowerCase().includes(q);
-
-    const typeOk=t==="all"||x.type===t;
-    const accOk=a==="all"||x.account===a;
-    const monthOk=!m||x.date.startsWith(m);
-
-    return searchOk&&typeOk&&accOk&&monthOk;
-  });
-}
-
-function renderSummary(filtered){
-  const income=filtered
-    .filter(x=>x.type==="income")
-    .reduce((s,x)=>s+x.amount,0);
-
-  const expense=filtered
-    .filter(x=>x.type==="expense")
-    .reduce((s,x)=>s+x.amount,0);
-
-  document.getElementById("sumIncome").textContent=money(income);
-  document.getElementById("sumExpense").textContent=money(expense);
-  document.getElementById("sumBalance").textContent=money(income-expense);
-}
-
-function renderMovements(filtered){
-  const box=document.getElementById("movements");
-  box.innerHTML="";
-
-  if(!filtered.length){
-    box.innerHTML='<div class="empty">No hay movimientos todavía.</div>';
-    return;
-  }
-
-  filtered.forEach(x=>{
-    const div=document.createElement("div");
-    div.className="item";
-    div.innerHTML=`
-      <div class="row">
-        <div>
-          <div class="title">${x.description}</div>
-          <div class="meta">${x.date} · ${x.account}<br>${x.category} · ${x.payment}</div>
-          ${x.notes?`<span class="tag">${x.notes}</span>`:""}
-          <span class="tag">${x.type==="income"?"Ingreso":"Gasto"}</span>
-        </div>
-        <div style="text-align:right">
-          <div class="amt ${x.type==="income"?"green":"red"}">
-            ${x.type==="income"?"+":"-"}${money(x.amount)}
-          </div>
-          <div style="margin-top:8px">
-            <button class="smallbtn" onclick="editMovement('${x.id}')">Editar</button>
-            <button class="smallbtn" onclick="deleteMovement('${x.id}')">Borrar</button>
-          </div>
-        </div>
-      </div>`;
-    box.appendChild(div);
-  });
-}
-
-function renderAccountSummary(){
-  const box=document.getElementById("accountSummary");
-  box.innerHTML="";
-  let count=0;
-
-  accounts.forEach(acc=>{
-    const items=movements.filter(x=>x.account===acc);
-    const income=items.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0);
-    const expense=items.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
-
-    if(!income&&!expense) return;
-    count++;
-
-    const div=document.createElement("div");
-    div.className="item";
-    div.innerHTML=`
-      <div class="title">${acc}</div>
-      <div class="line"><span>Ingresos</span><strong class="green">${money(income)}</strong></div>
-      <div class="line"><span>Gastos</span><strong class="red">${money(expense)}</strong></div>
-      <div class="line" style="border-bottom:none"><span>Balance</span><strong class="violet">${money(income-expense)}</strong></div>
-    `;
-    box.appendChild(div);
-  });
-
-  if(!count){
-    box.innerHTML='<div class="empty">Todavía no hay datos por cuenta.</div>';
-  }
-}
-
-function renderAccounting(){
-  const box=document.getElementById("accountingSummary");
-
-  const income=movements.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0);
-  const expense=movements.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
-  const balance=income-expense;
-
-  const byMonth={};
-
-  movements.forEach(x=>{
-    const k=x.date?x.date.slice(0,7):"Sin fecha";
-    if(!byMonth[k]) byMonth[k]={income:0,expense:0};
-    if(x.type==="income"){
-      byMonth[k].income+=x.amount;
-    }else{
-      byMonth[k].expense+=x.amount;
-    }
-  });
-
-  let html=`
-    <div class="item">
-      <div class="line"><span>Ingresos totales</span><strong class="green">${money(income)}</strong></div>
-      <div class="line"><span>Gastos totales</span><strong class="red">${money(expense)}</strong></div>
-      <div class="line" style="border-bottom:none"><span>Balance general</span><strong class="violet">${money(balance)}</strong></div>
-    </div>
-    <h2 style="margin-top:14px">Resumen por mes</h2>
-  `;
-
-  const months=Object.keys(byMonth).sort().reverse();
-
-  if(!months.length){
-    html+='<div class="empty">No hay datos mensuales todavía.</div>';
-  }
-
-  months.forEach(m=>{
-    html+=`
-      <div class="item">
-        <div class="title">${m}</div>
-        <div class="line"><span>Ingresos</span><strong class="green">${money(byMonth[m].income)}</strong></div>
-        <div class="line"><span>Gastos</span><strong class="red">${money(byMonth[m].expense)}</strong></div>
-        <div class="line" style="border-bottom:none"><span>Balance</span><strong class="violet">${money(byMonth[m].income-byMonth[m].expense)}</strong></div>
-      </div>
-    `;
-  });
-
-  box.innerHTML=html;
-}
-
-function exportCSV(){
-  const data=getFiltered();
-  if(!data.length) return alert("No hay datos para exportar.");
-
-  const headers=["Fecha","Tipo","Cuenta","Categoria","Metodo de pago","Monto","Descripcion","Notas"];
-  const rows=data.map(x=>[
-    x.date,
-    x.type,
-    x.account,
-    x.category,
-    x.payment,
-    x.amount,
-    x.description,
-    x.notes||""
-  ]);
-
-  const csv=[headers,...rows]
-    .map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(","))
-    .join("\n");
-
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="og-gastos-pro.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function clearAllData(){
-  if(!confirm("Esto borrará todos los movimientos. ¿Seguro?")) return;
-  movements=[];
-  persist();
-  render();
+data.push({t,d,a,acc});
+save();
 }
 
 function render(){
-  const filtered=getFiltered();
-  renderSummary(filtered);
-  renderMovements(filtered);
-  renderAccountSummary();
-  renderAccounting();
+let list=document.getElementById("list");
+list.innerHTML="";
+let balance=0;
+
+data.forEach(x=>{
+let div=document.createElement("div");
+div.className="item";
+
+if(x.t==="income"){
+div.innerHTML=`<span class="income">+ $${x.a}</span> - ${x.d} (${x.acc})`;
+balance+=x.a;
+}else{
+div.innerHTML=`<span class="expense">- $${x.a}</span> - ${x.d} (${x.acc})`;
+balance-=x.a;
 }
 
-fillAccounts();
-resetForm();
+list.appendChild(div);
+});
+
+document.getElementById("balance").innerText=balance;
+}
+
 render();
 </script>
+
 </body>
 </html>
-  
